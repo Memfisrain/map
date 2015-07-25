@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html ng-app="todoApp">
+<head>
+	<meta charset="utf-8">
+	<title>Angular</title>
+	<style>
+		#legend {
+			background: white;
+			padding: 10px;
+			border: 2px solid black;
+		}
+
+		#legend img {
+			vertical-align: middle;
+		}
+
+		#panel {
+			margin: 20px;
+		}
+	</style>				
+</head>
+<body>
+	<div id="panel">
+		<input id="address">
+		<input id="search" type="button" value="Искать">
+	</div>
+	
+	<div id="map_canvas" style="width: 500px; height: 500px"></div>
+
+	<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js"></script>
+	<script>
+
+		google.maps.event.addDomListener(window, 'load', init);
+
+		function init() {
+		  var myLatlng = new google.maps.LatLng(53.865953999999995, 27.6115002);
+			var myOpts = {
+				zoom: 13,
+				center: myLatlng,
+				mapTypeId: google.maps.MapTypeId.ROADMAP
+			};
+
+			var map = new google.maps.Map(document.getElementById("map_canvas"), myOpts);
+			map.setOptions({ styles: styles });
+
+			var styles = [
+				{
+					featureType: "road",
+					elementType: "geometry.stroke",
+					stylers: [{ color: "#000000" }, { weight: 1.2 }]
+				}, {
+					featureType: "road.highway",
+					elementType: "geometry",
+					stylers: [{ color: "#46C34D" }, { weight: 1.2 }]
+				}, {
+					featureType: "road.highway.controlled_access",
+					elementType: "geometry",
+					stylers: [{ color: "#FF6A0A" }, { weight: 1.2 }]
+				}, {
+					featureType: "road",
+					elementType: "labels.text",
+					stylers: [{ saturation: -100 }, { invert_lightness: true }]
+				}, {
+					featureType: "landscape",
+					elementType: "geometry",
+					stylers: [
+						{ hue: "#ffff00" },
+						{ gamma: 1.4 },
+						{ saturation: 82 },
+						{ lightness: 96 }
+					]
+				}, {
+					featureType: "poi",
+					elementType: "geometry",
+					stylers: [ 
+						{ visibility: "off" }
+					]
+				}, {
+					featureType: "poi.school",
+					elementType: "geometry",
+					stylers: [ 
+						{ visibility: "on" },
+						{ hue: "#fff700" },
+						{ lightness: -15 },
+						{ saturation: 99 }
+					]
+				}, {
+					featureType: "poi.school",
+					elementType: "labels.icon",
+					stylers: [
+						{ hue: "##770303" },
+						{ saturation: 100 },
+						{ weight: 5 }
+					]
+				}
+			];
+
+			var iconBase = "https://maps.google.com/mapfiles/kml/shapes/";
+
+			var icons = {
+				parking: {
+					name: "Parking",
+					icon: iconBase + "parking_lot_maps.png"
+				},
+				library: {
+					name: "Library",
+					icon: iconBase + "library_maps.png"
+				},
+				info: {
+					name: "Info",
+					icon: iconBase + "info-i_maps.png"
+				}
+			};
+
+			function addMarker(feature) {
+				var marker = new google.maps.Marker({
+					position: feature.position,
+					icon: icons[feature.type].icon,
+					title: feature.title || "",
+					map: map
+				});
+
+				google.maps.event.addListener(marker, "click", function() {
+					infoWindow.open(map, marker);
+				});
+			}
+
+			addMarker({
+				position: myLatlng,
+				type: "info",
+				title: "There I live"
+			})
+
+			var contentStr = `<div id="content">Here are details of marker</div>`;
+			var infoWindow = new google.maps.InfoWindow({
+				content: contentStr
+			});
+
+			var legend = document.createElement("div");
+			var legendTitle = document.createElement("h3");
+			legendTitle.textContent = "My first legend!";
+			legend.appendChild(legendTitle);
+			legend.id = "legend";
+
+			map.controls[google.maps.ControlPosition.RIGHT_TOP].push(legend);
+
+			for (var key in icons) {
+				var type = icons[key];
+				var name = type.name;
+				var icon = type.icon;
+				var div = document.createElement("div");
+				div.innerHTML = `<img src="${icon}"> ${name}`;
+				legend.appendChild(div);
+			}
+
+
+
+
+			var geoCoder = new google.maps.Geocoder();
+
+			document.getElementById("search").onclick = codeAddress;
+
+			function codeAddress() {
+				var address = document.getElementById("address").value;
+
+				geoCoder.geocode({ "address" : address }, function(results, status) {
+					console.log(map);
+					if (status == google.maps.GeocoderStatus.OK) {
+						map.setCenter(results[0].geometry.location);
+						var marker = new google.maps.Marker({
+							map: map,
+							position: results[0].geometry.location
+						});
+					} else {
+						alert("Geocode was not successful for the following reason: " + status)
+					}
+				});
+			}
+
+			//map.data.loadGeoJson("https://storage.googleapis.com/maps-devrel/google.json");
+			var styleOptions = {
+				fillColor: "green",
+				strokeColor: "orange",
+				strokeOpacity: 0.2,
+				strokeWeight: 2
+			};
+
+			map.data.loadGeoJson("info.json");
+			map.data.setStyle(styleOptions);
+
+			//var kmlUrl = "http://localhost:5555/westcampus.kml";
+			var kmlUrl = "https://www.dropbox.com/s/xye8ziiwheg7rfy/westcampus.kml";
+			var remoteKmlUrl = 'https://developers.google.com/maps/tutorials/kml/westcampus.kml';
+			var kmlOptions = {
+				suppressInfoWindow: true,
+				preserveViewport: false,
+				map: map
+			};
+
+			var kmlLayer = new google.maps.KmlLayer(remoteKmlUrl, kmlOptions);
+		}
+
+
+	</script>
+</body>
+</html>
+
